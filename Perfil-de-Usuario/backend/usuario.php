@@ -22,6 +22,16 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'POST') {
+    // Primeiro, buscar a imagem atual no banco de dados
+    $sql = "SELECT imagem FROM usuario WHERE id = 1";
+    $result = $conn->query($sql);
+    $oldImage = '';
+    
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $oldImage = $row['imagem'];
+    }
+
     // Pegando os dados do POST
     $nome   = $_POST['nome'] ?? '';
     $idade  = $_POST['idade'] ?? '';
@@ -30,12 +40,18 @@ if ($method === 'GET') {
     $estado = $_POST['estado'] ?? '';
     $bio    = $_POST['bio'] ?? '';
 
-    // Lida com o upload da imagem
-    $imagem = '';
+    // Lida com o upload da nova imagem
+    $imagem = $oldImage; // Mantém a imagem antiga por padrão
+    
     if (isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
         $targetDir = "uploads/";
         if (!is_dir($targetDir)) {
             mkdir($targetDir, 0777, true);
+        }
+
+        // Deleta a imagem antiga se existir
+        if (!empty($oldImage) && file_exists($oldImage)) {
+            unlink($oldImage);
         }
 
         $fileName = uniqid() . "_" . basename($_FILES["imagem"]["name"]);
