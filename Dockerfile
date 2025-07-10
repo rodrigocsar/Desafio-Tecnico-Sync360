@@ -1,25 +1,30 @@
-# Backend
-FROM node:18 as backend
+# ========== ETAPA DE CONSTRUÇÃO ==========
+FROM node:18 as builder
+
+# 1. Copia TUDO para o container
 WORKDIR /app
-COPY backend/package*.json ./backend/
+COPY . .
+
+# 2. Instala e builda o frontend
+RUN cd frontend && npm install && npm run build
+
+# 3. Instala o backend
 RUN cd backend && npm install
-COPY backend ./backend/
 
-# Frontend
-FROM node:18 as frontend
-WORKDIR /app
-COPY frontend/package*.json ./frontend/
-RUN cd frontend && npm install
-COPY frontend ./frontend/
-RUN cd frontend && npm run build
-
-# Imagem final
+# ========== ETAPA FINAL ==========
 FROM node:18
 WORKDIR /app
-COPY --from=backend /app/backend ./backend
-COPY --from=frontend /app/frontend/build ./frontend/build
 
-# Instala o serve para hospedar o frontend
+# Copia apenas o necessário
+COPY --from=builder /app/backend ./backend
+COPY --from=builder /app/frontend/build ./frontend/build
+
+# Instala o serve para o frontend
 RUN npm install -g serve
 
+# Portas
+EXPOSE 10000  # Backend
+EXPOSE 3000   # Frontend
+
+# Comando de inicialização
 CMD ["sh", "-c", "node backend/index.js & serve -s frontend/build -l 3000"]
